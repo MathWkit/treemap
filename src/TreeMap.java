@@ -1,16 +1,16 @@
 import com.sun.source.tree.Tree;
 
-public class TreeMap<K, V> {
+public class TreeMap<K extends Comparable<K>, V> {
     static final boolean RED = true;
     static final boolean BLACK = false;
 
-    public class TreeMapNode {
+    public class Node<K, V> {
         public K key;
         public V value;
-        public TreeMapNode parent, left, right;
+        public Node<K, V> parent, left, right;
         public boolean color;
 
-        TreeMapNode(K key, V value, boolean color, TreeMapNode parent) {
+        Node(K key, V value, boolean color, Node<K, V> parent) {
             this.key = key;
             this.value = value;
             this.color = color;
@@ -18,11 +18,12 @@ public class TreeMap<K, V> {
         }
     }
 
-    TreeMapNode root = null;
-    private int size = 0;
+    Node root;
+    private int size;
 
     public TreeMap() {
-
+        root = null;
+        size = 0;
     }
 
     public int getSize() {
@@ -33,7 +34,7 @@ public class TreeMap<K, V> {
         return size == 0;
     }
 
-    private int getHeight(TreeMapNode node) {
+    private int getHeight(Node<K, V> node) {
         return (node == null) ? -1 : Math.max(getHeight(node.left), getHeight(node.right)) + 1;
     }
 
@@ -41,45 +42,98 @@ public class TreeMap<K, V> {
         return getHeight(root);
     }
 
+    public Node<K, V> getRoot() {
+        return root;
+    }
+
+    public Node<K, V> getNode(K key) {
+        Node<K, V> current = root;
+
+        while (current != null) {
+            int cmp = key.compareTo(current.key);
+
+            if (cmp < 0) {
+                current = current.left;
+            } else if (cmp > 0) {
+                current = current.right;
+            } else {
+                return current;
+            }
+        }
+        return null;
+    }
+
+    public V getValue(K key) {
+        Node<K, V> node = getNode(key);
+        return node == null ? null : node.value;
+    }
+
+    public void add(K key, V value) {
+        if (root == null) {
+            root = new Node<>(key, value, true, null);
+            ++size;
+            return;
+        }
+
+        Node<K, V> current = root;
+        Node<K, V> parent = null;
+
+        while (current != null) {
+            parent = current;
+            int cmp = key.compareTo(current.key);
+
+            if (cmp < 0) {
+                current = current.left;
+            } else if (cmp > 0) {
+                current = current.right;
+            } else {
+                current.value = value;
+                return;
+            }
+        }
+
+        Node<K, V> newNode = new Node<>(key, value, true, parent);
+
+        if (key.compareTo(parent.key) < 0) {
+            parent.left = newNode;
+        } else {
+            parent.right = newNode;
+        }
+
+        ++size;
+
+        //fixAfterAdd();
+    }
+
     // вспомогательные методы:
-    private boolean colorOf(TreeMapNode node) {
+    private boolean colorOf(Node node) {
         return node == null ? BLACK : node.color;
     }
 
-    private boolean isRed(TreeMapNode node) {
+    private boolean isRed(Node node) {
         return colorOf(node) == RED;
     }
 
-    private boolean isBlack(TreeMapNode node) {
+    private boolean isBlack(Node node) {
         return colorOf(node) == BLACK;
     }
 
-    private void setColor(TreeMapNode node, boolean color) {
+    private void setColor(Node node, boolean color) {
         if (node != null) {
             node.color = color;
         }
     }
 
-    private TreeMapNode parentOf(TreeMapNode node) {
+    private Node parentOf(Node node) {
         return node == null ? null : node.parent;
     }
 
-    private TreeMapNode grandparentOf(TreeMapNode node) {
-        return (node == null || node.parent == null) ? null : node.parent.parent;
-    }
-
-    private TreeMapNode leftOf(TreeMapNode node) {
+    private Node leftOf(Node node) {
         return node == null ? null : node.left;
     }
 
-    private TreeMapNode rightOf(TreeMapNode node) {
+    private Node rightOf(Node node) {
         return node == null ? null : node.right;
     }
 
-    private TreeMapNode siblingOf(TreeMapNode node) {
-        return (node == null || node.parent == null)
-                ? null
-                : (node == node.parent.left)
-                    ? node.parent.left : node.parent.right;
-    }
 }
